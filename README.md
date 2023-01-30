@@ -1,1 +1,3 @@
 # Team-21-3D-Printer-and-Application
+
+Currently 3D Printers require users to manually upload a G-code file by and external storage device and initiate the printing process via controls on the printer. Our goal is to create a 3D printer that you ance upload, control, initiate, and interupt the 3D printing process from anywhere in the world that you have internet access. We also want to keep the print time be within 10% of the printing time of the Ender 3 which is the frame and mechanical hardware used for our printer. To try to increase the print time we are going to attempt it by speading up the Z-axis movement speed.
