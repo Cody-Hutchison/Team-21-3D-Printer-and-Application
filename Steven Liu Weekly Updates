@@ -1,0 +1,11 @@
+Jan 23rd to 29th
+I have added some basic security rules to ther server and made several minor improvements to the application UI. I have done numerous research on Android Studio 
+SharedViewModel class and the use of Livedata to handle communication between fragments (home and library tab) and fix major bug (1 of 2). I have also begun incorporating
+SharedViewModel and Livedata into the current application subsystem.
+
+Jan 30th to Feb 5th
+I am continuing to incorporate SharedViewModel and LiveData to handle the communication bug. I have also started research into handling long string communication 
+to server bug (2 of 2) with not much information on the root cause or any possible solutions. I expect to have the SharedViewModel and LiveData incorporated and validated
+by next lab meeting, and if I still do not have a solution to server communication bug, I will speak to my TA or sponsor to find a possible solution or middle ground. 
+Note: Server communication bug is random. Usually that specific communication to server works an estimated 95% of the time and often only occurs after not running the 
+application for a certain period of time.
