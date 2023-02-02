@@ -1,0 +1,4 @@
+Week of Jan 22
+  Ensured all code still works and can connect to server. Combined all code. Working on bug fixes and with reading from Firebase.
+Week of Jan 29
+  Adding code to check for updates from phone app that will interrupt the G-code reading process, execute the command, then resume or cancel the print.
