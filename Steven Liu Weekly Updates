@@ -9,3 +9,18 @@ to server bug (2 of 2) with not much information on the root cause or any possib
 by next lab meeting, and if I still do not have a solution to server communication bug, I will speak to my TA or sponsor to find a possible solution or middle ground. 
 Note: Server communication bug is random. Usually that specific communication to server works an estimated 95% of the time and often only occurs after not running the 
 application for a certain period of time.
+
+Feb 6th to Feb 11th
+- During this week I have fixed 2 of 3 bugs. 
+  - (1/3) FIXED: One of which concerned a display bug where items displayed on the "home tab" would be displayed on the library tab. 
+          Engaging with this wrongly associated tab and then switching tabs using the icon buttons on the bottom could lead to major issues with the app and printer. 
+  - (2/3) FIXED: The second bug was related to the app crashing when the user initiated a file upload and decided to cancel it in the file selection stage of the process. 
+          Previously I mentioned this to our project sponsor Dalton Cyr with the workaround being that a pop-up menu would ask the user to confirm whether there was a 
+          selectable file and whether the user wanted to continue before proceeding with the file upload procedure that way the user would have a non-crashable action 
+          to take. After speaking with Dalton about this issue in the middle of 403, we agreed this would be fine which is why I haven’t mentioned it recently. 
+  - (3/3) UNFIXED: I have decided to pursue a workaround solution for the bug by uploading the url in portions to Firebase and using Firebase Functions to put them back 
+          together for the complete url. Through several tests, it seems the issue revolves around the length of the string. While I pursue this fix, I will continue to 
+          search for a more direct or proper fix to this bug. I plan to have the workaround solution completed by the end of the following week. 
+- Concerning MCU integration, my server side of the integration has been ready since 403, so I currently don’t need to make any changes. I have communicated with Abigail 
+  who is in charge of the MCU side and stated to contact me if there is anything that needs to be done from my side.
+
