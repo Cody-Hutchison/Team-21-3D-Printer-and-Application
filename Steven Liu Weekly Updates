@@ -10,7 +10,7 @@ by next lab meeting, and if I still do not have a solution to server communicati
 Note: Server communication bug is random. Usually that specific communication to server works an estimated 95% of the time and often only occurs after not running the 
 application for a certain period of time.
 
-Feb 6th to Feb 11th
+Feb 5th to Feb 11th
 - During this week I have fixed 2 of 3 bugs. 
   - (1/3) FIXED: One of which concerned a display bug where items displayed on the "home tab" would be displayed on the library tab. 
           Engaging with this wrongly associated tab and then switching tabs using the icon buttons on the bottom could lead to major issues with the app and printer. 
@@ -24,3 +24,10 @@ Feb 6th to Feb 11th
 - Concerning MCU integration, my server side of the integration has been ready since 403, so I currently don’t need to make any changes. I have communicated with Abigail 
   who is in charge of the MCU side and stated to contact me if there is anything that needs to be done from my side.
 
+Feb 12th to 18th
+- Bug (3/3) above should be fixed. Since the errror is difficult to replicate after implementing the current solution, I believe the bug has been resolved. However, I am
+still running tests to confirm whether or not it has been successfully handled. Note, I have performed over 60 url communications messages to the server from the 
+application without error.
+- Made improvements to UI for handling new fragment communication through "SharedViewModel" for fixing bug (1/3)
+- Working on Start/Cancel print button to handle unallowed prints while a print is in process.
+- Working on UI for a completed print.
