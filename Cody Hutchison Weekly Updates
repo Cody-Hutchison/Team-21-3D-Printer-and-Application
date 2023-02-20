@@ -12,3 +12,10 @@ Parts were all recieved Tuesday and started soldering on Wednesday. I completed 
 Motor Control Board complete. Plan is to still have the boards validated by February 15tg and ready for for intergration.
 
 Feb 13th to 19th
+PCBs have been completely soldered and started to validating both boards. Ran into issue with the MOSFET switching with an input voltage and over the weekend but unable
+to get it working. I also had an issue with the axis driver getting 5Vs on a pin in the Axis driver/Main Controller board connector that shouldnt be getting the voltage.
+I worked on both problems over the weekend without any success and will talk to Dr. Lusher on Monday for advice.
+
+Feb 20th to 26th
+Talking to Dr. Lusher Monday morning, discovered I was using to low of a voltage for my MOSFETs so will try testing them at 3.3V. He also recommended grounding the pin
+thats getting the 5V with a 1k ohm resistor to see if there is an internal switch that isnt closing since the pin is free floating.
