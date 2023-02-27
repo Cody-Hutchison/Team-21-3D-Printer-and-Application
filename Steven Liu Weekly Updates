@@ -31,3 +31,10 @@ application without error.
 - Made improvements to UI for handling new fragment communication through "SharedViewModel" for fixing bug (1/3)
 - Working on Start/Cancel print button to handle unallowed prints while a print is in process.
 - Working on UI for a completed print.
+
+Feb 19th to 25th
+- Bug (3/3) I have performed over 200 url communication messages to the server from the application with only 3 faulty errors. I do not believe the results can be any 
+better. As of right now the issue is resolved.
+- Fixed Start/Cancel print button to handle unallowed prints while a print is in process.
+- Continuing to implement a completed print notification.
+- Working on implementing allowed and unallowed formatting option on the third tab.
