@@ -18,4 +18,9 @@ I worked on both problems over the weekend without any success and will talk to 
 
 Feb 20th to 26th
 Talking to Dr. Lusher Monday morning, discovered I was using to low of a voltage for my MOSFETs so will try testing them at 3.3V. He also recommended grounding the pin
-thats getting the 5V with a 1k ohm resistor to see if there is an internal switch that isnt closing since the pin is free floating.
+thats getting the 5V with a 1k ohm resistor to see if there is an internal switch that isnt closing since the pin is free floating. On Wednesday I was able to validate
+all the drivers except the X-axis driver. Come to find out that the original TMC-2130 chip was burnt out and the I tried using one off my old board from 403 but the 
+VCC_IO pin was getting 3.3V but wasnt turning on the chip as required. I ordered 3 more chips and they arrived on Friday but didn't have time to solder them.
+
+Feb 27th to Mar 5th
+I was able to solder the new chip onto the board and validate the X-driver which completed the validation of the electronic components of the project.
