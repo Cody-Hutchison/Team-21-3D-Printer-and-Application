@@ -2,3 +2,10 @@ Week of Jan 22
   Ensured all code still works and can connect to server. Combined all code. Working on bug fixes and with reading from Firebase.
 Week of Jan 29
   Adding code to check for updates from phone app that will interrupt the G-code reading process, execute the command, then resume or cancel the print.
+Week of Feb 5
+  Still working on Firebase code to prepare for phone app and MCU integration. Updating pins for communication to all component wires.
+Week of Feb 12
+  Ready for validation with phone app and MCU integration. Waiting to integrate with electrical systems to finish code migration.
+Week of Feb 19
+  Ready to test stepper motor rotation to calculate mm per steps/microsteps.
+Week of Feb 26 (Blitz Weekend)
