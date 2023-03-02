@@ -38,3 +38,7 @@ better. As of right now the issue is resolved.
 - Fixed Start/Cancel print button to handle unallowed prints while a print is in process.
 - Continuing to implement a completed print notification.
 - Working on implementing allowed and unallowed formatting option on the third tab.
+
+Feb 26th to Mar 4th
+- Added code to prevent extruder repositioning while a print is in progress, temperature and fan speeds are allowed to change
+- Added code to update home tab if a print is in progress when app is first opened
