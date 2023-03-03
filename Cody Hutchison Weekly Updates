@@ -23,4 +23,7 @@ all the drivers except the X-axis driver. Come to find out that the original TMC
 VCC_IO pin was getting 3.3V but wasnt turning on the chip as required. I ordered 3 more chips and they arrived on Friday but didn't have time to solder them.
 
 Feb 27th to Mar 5th
-I was able to solder the new chip onto the board and validate the X-driver which completed the validation of the electronic components of the project.
+I was able to solder the new chip onto the board and validate the X-driver which completed the validation of the electronic components of the project. I then installed 
+the boards onto the PCB and created the wire bundles that go between the two boards. We started intergration testing with testing a code that turns fan 1 and 2 off then
+on for ten seconds and then off and just repeats the process. I also started thinking about the PCB case but want to wait and see how the printers jdifferent axis moving
+will effect the cable before starting a physical design.
