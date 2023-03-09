@@ -27,3 +27,8 @@ I was able to solder the new chip onto the board and validate the X-driver which
 the boards onto the PCB and created the wire bundles that go between the two boards. We started intergration testing with testing a code that turns fan 1 and 2 off then
 on for ten seconds and then off and just repeats the process. I also started thinking about the PCB case but want to wait and see how the printers jdifferent axis moving
 will effect the cable before starting a physical design.
+
+Mar 6th to 12th
+Continued assisting with MCU integration with PCB boards. Currently able to turn fans on/off, and can send power to turn on Hotend and Heated bed but unable to get the 
+thermistors working at the moment. We have calculated the A, B, and C constants for the Steinhart-Hart equation. We know that the ADC value is 12 bit and have an idea of
+what the bits being red via the thermistor input on the MCU but we are coming up with the incorrect value.
