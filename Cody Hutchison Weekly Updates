@@ -28,7 +28,7 @@ the boards onto the PCB and created the wire bundles that go between the two boa
 on for ten seconds and then off and just repeats the process. I also started thinking about the PCB case but want to wait and see how the printers jdifferent axis moving
 will effect the cable before starting a physical design.
 
-Mar 6th to 12th
+Mar 6th to 19th
 Continued assisting with MCU integration with PCB boards. Currently able to turn fans on/off, and can send power to turn on Hotend and Heated bed but unable to get the 
 thermistors working at the moment. We have calculated the A, B, and C constants for the Steinhart-Hart equation. We know that the ADC value is 12 bit and have an idea of
 what the bits being red via the thermistor input on the MCU but we are coming up with the incorrect value.
