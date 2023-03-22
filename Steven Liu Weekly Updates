@@ -42,3 +42,8 @@ better. As of right now the issue is resolved.
 Feb 26th to Mar 4th
 - Added code to prevent extruder repositioning while a print is in progress, temperature and fan speeds are allowed to change
 - Added code to update home tab if a print is in progress when app is first opened
+
+Mar 5th to Mar 18th
+- Added code to set home tab textfile name to "select file" when there hasn't been a file selected
+- Added code to allow formatting tab to allow "0" values 
+- Added code to send an in app notification when print is complete
