@@ -47,3 +47,12 @@ Mar 5th to Mar 18th
 - Added code to set home tab textfile name to "select file" when there hasn't been a file selected
 - Added code to allow formatting tab to allow "0" values 
 - Added code to send an in app notification when print is complete
+
+Mar 19th to Mar 25th
+- Cleaned code
+- Adjusted code for formatting tab
+- Implementing a delete prints
+
+Mar 26th to Apr 1st
+- Adjusted code to select only gcode files
+- Adding comments to code 
