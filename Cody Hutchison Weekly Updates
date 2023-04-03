@@ -37,3 +37,7 @@ Mar 20th to 26th
 Continued to assist with trouble shooting and coding of thermistors. Both circuits are designed the same for us to read the voltage across the termistor as a voltage
 divider with the thermistor being R1 and the constant 10k resistor as R2. Heated bed is reading the voltage as though its R2 while the Hotend is reading the voltage off
 R1 as suspected. Also discovered I had designed the end switches incorrectly, but have a work around that I am going to run past Prof Lusher to see if it is appropriate
+
+Mar 27th to Apr 2
+We corrected the formula for the heated bed and is now working correctly. Was cutting the steel for the PCB case when there was a small hiccup with the tools, but they
+have been fixed and should be completed this week.
