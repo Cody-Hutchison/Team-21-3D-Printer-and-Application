@@ -8,4 +8,11 @@ Week of Feb 12
   Ready for validation with phone app and MCU integration. Waiting to integrate with electrical systems to finish code migration.
 Week of Feb 19
   Ready to test stepper motor rotation to calculate mm per steps/microsteps.
-Week of Feb 26 (Blitz Weekend)
+Week of Feb 26
+  Began intergration with electrical systems. Fans working as intended. Fixing problems in communicating to other components.
+Week of Mar 5
+  Fixing problems in writing updates to Firebase of changing values in realtime. Got heated bed and hotend to heat up but won't stay at desired temperature. Figuring out why stepper motors not moving for full revolutions.
+Week of Mar 12 and Mar 19
+  Still having problems with heated components. Tried multiple different configurations of code and in/ouput requirements for pins. Got stepper motors to move. Still need to find correct steps per mm.
+Week of Mar 26
+  Finally figured out the correct code for calculating adc values from the heated bed thermistor. Heated bed now operating as intended. Eye-balled the full revolution of stepper motors and found steps per mm for the axis motors.
