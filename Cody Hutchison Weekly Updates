@@ -41,3 +41,11 @@ R1 as suspected. Also discovered I had designed the end switches incorrectly, bu
 Mar 27th to Apr 2
 We corrected the formula for the heated bed and is now working correctly. Was cutting the steel for the PCB case when there was a small hiccup with the tools, but they
 have been fixed and should be completed this week.
+
+Apr 3rd to 9th
+Worked on the base plate, test fitted it and need to take a little more material from the sides. Figured out the issue with the thermisters and the switches as well.
+The read in wire wasnt connected to an ADC pin which I didn't know was required. I was able to fix the thermister wire with a jumper wire on the board and now it works.
+
+Apr 10th to 16th
+I was able to get the mounting holes drilled for the base plate and the base plate painted. Ran jumper wires from the ADC pins on the MCU to the switch grounds and 
+isolated the ground pins from the ground plane.
