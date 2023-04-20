@@ -49,3 +49,6 @@ The read in wire wasnt connected to an ADC pin which I didn't know was required.
 Apr 10th to 16th
 I was able to get the mounting holes drilled for the base plate and the base plate painted. Ran jumper wires from the ADC pins on the MCU to the switch grounds and 
 isolated the ground pins from the ground plane.
+
+Apr 17th to 23rd
+The base plate is mounted and the switches are working as expected. The poster board for showcase is halfway done and the printer is almost working as expected.
