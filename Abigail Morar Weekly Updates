@@ -16,3 +16,9 @@ Week of Mar 12 and Mar 19
   Still having problems with heated components. Tried multiple different configurations of code and in/ouput requirements for pins. Got stepper motors to move. Still need to find correct steps per mm.
 Week of Mar 26
   Finally figured out the correct code for calculating adc values from the heated bed thermistor. Heated bed now operating as intended. Eye-balled the full revolution of stepper motors and found steps per mm for the axis motors.
+Week of Apr 2
+  Working on combining separate sketches into one full program. Limit switches are not outputting correctly from the board and the wrong pins for reading in ADC values for the hotend are wrong.
+Week of Apr 9
+  The MCU pins selected for reading in values for the hotend were corrected. All 3D printer components are controllable by user through app/server. Working on reading G-code from Firebase.
+Week of Apr 16
+  Limit switches on board have been fixed, MCU and electrical system integration validated. Combined all sketches into one program. MCU and app integration validated. 3D printer can send and receive all required information to app and board. G-code is being read and executed.
