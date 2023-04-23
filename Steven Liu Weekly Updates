@@ -60,3 +60,13 @@ Mar 26th to Apr 1st
 Apr 2nd to Apr 8th
 - Added logo
 - Added Splash Screen
+
+Apr 9th to Apr 22nd
+- Took over a portion of MCU file transfer duties by parsing 100 gcode lines/instructions into a single FB node for all gcode lines within a file,
+  therefore MCU does not need to open files and parse within the microcontroller
+- With the above changes to file transfering, I went through and updated all interconnected aspects of the code
+- Improved "print completion" process within app and server
+- Added tab refresh when changes in visual displays need to reflect FB server information
+- Improved incorrect file selection handling within file upload process
+- When user fails to input a new name for a file, app defaults to internal file name
+- Added comments and cleaned project code
