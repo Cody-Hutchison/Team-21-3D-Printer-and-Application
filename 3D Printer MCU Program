@@ -16,16 +16,16 @@
 
 //Firebase object initialization
 FirebaseData firebaseData;
-FirebaseJson json;
+FirebaseJson jsonReport, jsonStatus, jsonLast;
 
 // Firebase paths to/from app data
-#define PRINT "/Start Print/Command Print/beginPrint"  //reading and writing
-#define CHECK "/Printer Formatting/Format"  //reading from
-#define REPORT "/Printer Formatting Test/Format" //writing to
+#define PRINT "/Start Print/Command Print/beginPrint"  //reading from
 #define NUMBER "/Start Print/Command Print/fileNumLines"  //reading from
 #define NAME "/Start Print/Command Print/fileName"  //reading from
-#define GCODE "/Print Files 2/"  //reading from
-#define STATUS "/Start Print/Command Print/print_complete" //writing to
+#define GCODE "/Print Files Readable/"  //reading from
+#define CHECK "/Printer Formatting/Format"  //reading from
+#define REPORT "/Printer Formatting Test/Format" //writing to
+#define STATUS "/Start Print/Command Print" //writing to
 
 //Stepper motor pins
 #define MOTOR_X_VCC 4
@@ -60,45 +60,38 @@ FirebaseJson json;
 #define HOTEND_THERM_OUT 42
 #define HOTEND_THERM_IN 19
 
-//Fan control pins (HIGH=[1+2], LOW=[1], OFF=[])
+//Fan control pins
 #define FAN_CTRL_1 40
 #define FAN_CTRL_2 39
 
-//Firebase and parsing variables
-String printing, reportStatus;
-String reportBedTemp, updateBedTemp, newBedTemp;
-String reportExtTemp, updateExtTemp, newExtTemp;
-String reportFanSpeed, updateFanSpeed, newFanSpeed, prevFanSpeed;
-String reportXpos, updateXpos, newXpos;
-String reportYpos, updateYpos, newYpos;
-String reportZpos, updateZpos, newZpos;
-int newBedTempint, prevBedTemp;
-int newExtTempint, prevExtTemp;
-float newXposfloat, oldXpos, moveXpos, prevXpos = 0.000;
-float newYposfloat, oldYpos, moveYpos, prevYpos = 0.000;
-float newZposfloat, oldZpos, moveZpos, prevZpos = 0.0;
+//Firebase and parsing global variables
+String printing;
+String prevFanSpeed;
+String updateXpos, updateYpos, updateZpos;
+float oldXpos, moveXpos, prevXpos = 0.000;
+float oldYpos, moveYpos, prevYpos = 0.000;
+float oldZpos, moveZpos, prevZpos = 0.0;
+float bed_resistance, Tbed, bed_temperature;
+float head_resistance, Thead, head_temperature;
+int prevBedTemp, getBedTemp;
+int prevExtTemp, getExtTemp;
 int commandNum;
 
 //Stepper motor configurations
-//Z 8mm per full rev, so 1600 steps/mm
-//Y 40mm per full rev, so 320 steps/mm
 const int stepsPerRev = 12800;
-const int stepsPermmXY = 320;
-const int stepsPermmZE = 1600;
+const int stepsPermmXY = 320; //Y 40mm per full rev, so 320 steps/mm
+const int stepsPermmZE = 1600;  //Z 8mm per full rev, so 1600 steps/mm
+
 Stepper motorX(stepsPerRev, MOTOR_X_STEP, MOTOR_X_DIR);
 Stepper motorY(stepsPerRev, MOTOR_Y_STEP, MOTOR_Y_DIR);
 Stepper motorZ(stepsPerRev, MOTOR_Z_STEP, MOTOR_Z_DIR);
 Stepper motorE(stepsPerRev, MOTOR_E_STEP, MOTOR_E_DIR);
 
-//Heated component configurations
+//Heated component constants
 const double A = -0.0543085096797757;
 const double B = 0.0163042730921312;
 const double C = -0.0015640625488228;
 const double D = 0.0000506610073595609;
-float bed_resistance, Tbed, bed_temperature;
-float head_resistance, Thead, head_temperature;
-int getBedTemp = 0, heatedbedTemp = 0;
-int getExtTemp = 0, hotendTemp = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -117,24 +110,24 @@ void setup() {
   delay(500);
 
   //All pinMode setup
-  pinMode(MOTOR_X_VCC, OUTPUT); //digitalWrite, essentially always on
-  pinMode(MOTOR_Y_VCC, OUTPUT); //digitalWrite, essentially always on
-  pinMode(MOTOR_Z_VCC, OUTPUT); //digitalWrite, essentially always on
-  pinMode(MOTOR_E_VCC, OUTPUT); //digitalWrite, essentially always on
+  pinMode(MOTOR_X_VCC, OUTPUT); //digitalWrite
+  pinMode(MOTOR_Y_VCC, OUTPUT); //digitalWrite
+  pinMode(MOTOR_Z_VCC, OUTPUT); //digitalWrite
+  pinMode(MOTOR_E_VCC, OUTPUT); //digitalWrite
   pinMode(MOTOR_ENABLE, OUTPUT);  //digitalWrite
   pinMode(HEATED_BED_CTRL, OUTPUT); //digitalWrite
-  pinMode(HEATED_BED_THERM_OUT, OUTPUT);  //set high
+  pinMode(HEATED_BED_THERM_OUT, OUTPUT);  //digitalWrite, set high
   pinMode(HEATED_BED_THERM_IN, INPUT);  //analogRead
   pinMode(HOTEND_CTRL, OUTPUT); //digitalWrite
-  pinMode(HOTEND_THERM_OUT, OUTPUT);  //set high
+  pinMode(HOTEND_THERM_OUT, OUTPUT);  //digitalWrite, set high
   pinMode(HOTEND_THERM_IN, INPUT);  //analogRead
   pinMode(FAN_CTRL_1, OUTPUT);  //digitalWrite
   pinMode(FAN_CTRL_2, OUTPUT);  //digitalWrite
-  pinMode(X_SWITCH_LIM, INPUT);  //high until pressed //digitalRead
+  pinMode(X_SWITCH_LIM, INPUT);  //analogRead, high untill pressed
   pinMode(X_SWITCH_LIM_OUTPUT, OUTPUT);
-  pinMode(Y_SWITCH_LIM, INPUT);  //high until pressed //digitalRead
+  pinMode(Y_SWITCH_LIM, INPUT);  //analogRead, high untill pressed
   pinMode(Y_SWITCH_LIM_OUTPUT, OUTPUT);
-  pinMode(Z_SWITCH_LIM, INPUT);  //high until pressed //digitalRead
+  pinMode(Z_SWITCH_LIM, INPUT);  //analogRead, high untill pressed
   pinMode(Z_SWITCH_LIM_OUTPUT, OUTPUT);
 
   //Pin initial settings
@@ -142,7 +135,7 @@ void setup() {
   digitalWrite(MOTOR_Y_VCC, HIGH);  //on
   digitalWrite(MOTOR_Z_VCC, HIGH);  //on
   digitalWrite(MOTOR_E_VCC, HIGH);  //on
-  digitalWrite(MOTOR_ENABLE, LOW);  //on  //MAYBE MAKE HIGH (OFF) AND ENABLE WHEN USED
+  digitalWrite(MOTOR_ENABLE, HIGH);  //off
   digitalWrite(HEATED_BED_CTRL, LOW); //off
   digitalWrite(HEATED_BED_THERM_OUT, HIGH); //always on
   digitalWrite(HOTEND_CTRL, LOW); //off
@@ -156,49 +149,47 @@ void setup() {
 }
 
 void gcode() {
-  delay(500);
-  Firebase.get(firebaseData, NUMBER);
+  String reportStatus = "false";  //print started 
+  jsonStatus.set("/print_complete", reportStatus);
+  Firebase.updateNode(firebaseData, STATUS, jsonStatus);
+  digitalWrite(MOTOR_X_VCC, HIGH);  //ensure motor on for print
+  digitalWrite(MOTOR_Y_VCC, HIGH);
+  digitalWrite(MOTOR_Z_VCC, HIGH);
+  digitalWrite(MOTOR_E_VCC, HIGH);
+  digitalWrite(MOTOR_ENABLE, LOW);  //enable motors for print
+  Firebase.get(firebaseData, NUMBER); //get total number of nodes
   int nodeTotal = firebaseData.stringData().toInt();
-  Serial.print("nodeTotal: ");
-  Serial.println(nodeTotal);
-  Firebase.get(firebaseData, NAME);
+  Firebase.get(firebaseData, NAME); //gets print job name
   String name = firebaseData.stringData();
-  Serial.print("name: ");
-  Serial.println(name);
-  for (int nodeNumber = 1; nodeNumber < (nodeTotal+1); nodeNumber++) {
-    Firebase.get(firebaseData, GCODE + name + "/" + String(nodeNumber));
+  float X, Y, Z;
+  for (int nodeNumber = 1; nodeNumber < (nodeTotal+1); nodeNumber++) {  //iterate every node till complete
+    Firebase.get(firebaseData, GCODE + name + "/" + String(nodeNumber));  //get full node
     String node = firebaseData.stringData();
-    Serial.print("node: ");
-    Serial.println(node);
-    int startIndex = 0;
-    while (startIndex < node.length()) {
+    int startIndex = 0, relative = 0, S = 0;
+    while (startIndex < node.length()) {  //iterate each command till end of node
       int endIndex = node.indexOf('/', startIndex);
       if (endIndex == -1) {
         endIndex = node.length();
       }
-      String gCode = node.substring(startIndex, endIndex);
-      Serial.print("gCode first string: ");
-      Serial.println(gCode);
+      String gCode = node.substring(startIndex, endIndex);  //get individual command
       char *gCodeCopy;
       int lineLength = node.length();
-      gCodeCopy = (char*) malloc((lineLength + 1) * sizeof(char));
-      gCode.toCharArray(gCodeCopy, lineLength + 1);
+      gCodeCopy = (char*) malloc((lineLength + 1) * sizeof(char));  //dynamically allocate enough memory on heap + null terminator
+      gCode.toCharArray(gCodeCopy, lineLength + 1); //copy into a char to be parsed
       char command, argument, commandPos;
       char *token;
-      float F, X, currentX, Y, currentY, Z, currentZ, E, currentE, prevE, extrude, flowXY, flowEZ;
-      int limitx, limity, limitz, S = 0;
-      sscanf(gCodeCopy, "%c%i", &command, &commandNum);
-      Serial.print("gCodeCopy of first string: ");
-      Serial.println(gCodeCopy);
-      if (command == 'G') {
+      float F, currentX, absoluteX, currentY, absoluteY, currentZ, absoluteZ, E, currentE, absoluteE, prevE, extrude, flowXY, flowZE;
+      int limitx, limity, limitz;
+      sscanf(gCodeCopy, "%c%i", &command, &commandNum); //get G or M command line
+      if (command == 'G') { //parse G commands
         switch(commandNum) {
           case 0: //linear move of XYZ
-            token = strtok(gCodeCopy, " ");
+            token = strtok(gCodeCopy, " "); //separate each token (FXYZ)
             if (token != NULL) {
               token = strtok(NULL, " ");
-              while (token != NULL) {
+              while (token != NULL) { //categorize each token
                 if (token[0] == 'X') {
-                  X = atof(token+1);
+                  X = atof(token+1);  //turn value after parameter into float
                 }
                 else if (token[0] == 'Y') {
                   Y = atof(token+1);
@@ -212,37 +203,39 @@ void gcode() {
                 token = strtok(NULL, " ");
               }
             }
-            moveXpos = X-prevXpos;
-            prevXpos = X;
+            if (relative = 1) { //execute when G91 is called
+              absoluteX = absoluteX+X;  //maintain absolute location of extruder
+              absoluteY = absoluteY+Y;
+              absoluteZ = absoluteZ+Z;
+              prevXpos = 0; //reset for relative moves
+              prevYpos = 0;
+              prevZpos = 0;
+            }
+            moveXpos = X-prevXpos;  //calculate extruder location value
+            prevXpos = X; //remember previous location
             moveYpos = Y-prevYpos;
             prevYpos = Y;
             moveZpos = -1*(Z-prevZpos);
             prevZpos = Z;
-            flowXY = (((F/60)*stepsPermmXY)/stepsPerRev)*60;
-            flowEZ = (((F/60)*stepsPermmZE)/stepsPerRev)*60;
-            motorX.setSpeed(flowXY);
+            flowXY = F*stepsPermmXY/stepsPerRev;  //convert flow rate from mm/min to rpm
+            flowZE = F*stepsPermmZE/stepsPerRev;
+            motorX.setSpeed(flowXY); //set motor speed with flow value
             motorY.setSpeed(flowXY);
-            motorZ.setSpeed(flowEZ);
-            motorX.step(moveXpos*stepsPermmXY);
+            motorZ.setSpeed(flowZE);
+            motorX.step(moveXpos*stepsPermmXY); //execute extruder location value by steps per mm
             motorY.step(moveYpos*stepsPermmXY);
             motorZ.step(moveZpos*stepsPermmZE);
-            updateXpos = String(prevXpos);
+            updateXpos = String(prevXpos);  //set for firebase_report
             updateYpos = String(prevYpos);
             updateZpos = String(prevZpos);
-            Serial.print("prevXpos from G0: ");
-            Serial.println(prevXpos);
-            Serial.print("prevYpos from G0: ");
-            Serial.println(prevZpos);
-            Serial.print("prevZpos from G0: ");
-            Serial.println(prevZpos);
             break;
           case 1: //linear move of XYZ and E
-            token = strtok(gCodeCopy, " ");
+            token = strtok(gCodeCopy, " "); //separate each token (FXYZE)
             if (token != NULL) {
-              token = strtok(NULL, " ");
+              token = strtok(NULL, " ");  //categorize each token
               while (token != NULL) {
                 if (token[0] == 'X') {
-                  X = atof(token+1);
+                  X = atof(token+1);  //turn value after parameter into float
                 }
                 else if (token[0] == 'Y') {
                   Y = atof(token+1);
@@ -259,48 +252,50 @@ void gcode() {
                 token = strtok(NULL, " ");
               }
             }
-            moveXpos = X-prevXpos;
-            prevXpos = X;
+            if (relative = 1) { //execute when G91 is called
+              absoluteX = absoluteX+X;  //maintain absolute location of extruder
+              absoluteY = absoluteY+Y;
+              absoluteZ = absoluteZ+Z;
+              absoluteE = absoluteE+E;
+              prevXpos = 0; //reset for relative moves
+              prevYpos = 0;
+              prevZpos = 0;
+              prevE = 0;
+            }
+            moveXpos = X-prevXpos;  //calculate extruder location value
+            prevXpos = X; //remember previous location
             moveYpos = Y-prevYpos;
             prevYpos = Y;
             moveZpos = -1*(Z-prevZpos);
             prevZpos = Z;
             extrude = E-prevE;
             prevE = E;
-            flowXY = (((F/60)*stepsPermmXY)/stepsPerRev)*60;
-            flowEZ = (((F/60)*stepsPermmZE)/stepsPerRev)*60;
-            motorX.setSpeed(flowXY);
+            flowXY = F*stepsPermmXY/stepsPerRev;  //convert flow rate from mm/min to rpm
+            flowZE = F*stepsPermmZE/stepsPerRev;
+            motorX.setSpeed(flowXY); //set motor speed with flow value
             motorY.setSpeed(flowXY);
-            motorZ.setSpeed(flowEZ);
-            motorE.setSpeed(flowEZ);
+            motorZ.setSpeed(flowZE);
+            motorE.setSpeed(flowZE);
+            motorE.step(extrude*stepsPermmZE);  //execute extruder location value by steps per mm
             motorX.step(moveXpos*stepsPermmXY);
             motorY.step(moveYpos*stepsPermmXY);
             motorZ.step(moveZpos*stepsPermmZE);
-            motorE.step(extrude*stepsPermmZE);
-            updateXpos = String(prevXpos);
+            updateXpos = String(prevXpos);  //set for firebase_report
             updateYpos = String(prevYpos);
             updateZpos = String(prevZpos);
-            Serial.print("prevXpos from G1: ");
-            Serial.println(prevXpos);
-            Serial.print("prevYpos from G1: ");
-            Serial.println(prevZpos);
-            Serial.print("prevZpos from G1: ");
-            Serial.println(prevZpos);
-            Serial.print("prevE from G1: ");
-            Serial.println(prevE);
             break;
           case 28:  //auto home XYZ
-            limitx = analogRead(X_SWITCH_LIM);
+            limitx = analogRead(X_SWITCH_LIM);  //read limit switch adc value
             limity = analogRead(Y_SWITCH_LIM);
             limitz = analogRead(Z_SWITCH_LIM);
-            motorX.setSpeed(90);
+            motorX.setSpeed(90);  //set default motor speed
             motorY.setSpeed(90);
             motorZ.setSpeed(90);  //225?
             while (limitx > 100) {  //if high (on)
               motorX.step(-stepsPermmXY); //move home
               limitx = analogRead(X_SWITCH_LIM);
             }
-            while (limitx < 100) {  //if low (off) [home]
+            while (limitx < 100) {  //if low (off) [@ home]
               motorX.step(stepsPermmXY);  //move away from switch till high
               limitx = analogRead(X_SWITCH_LIM);
             }
@@ -328,53 +323,45 @@ void gcode() {
 
             X = 0.0, Y = 0.0, Z = 0.0;
             prevXpos = X, prevYpos = Y, prevZpos = Z;
-            updateXpos = String(prevXpos);
+            updateXpos = String(prevXpos);  //set for firebase_report
             updateYpos = String(prevYpos);
             updateZpos = String(prevZpos);
-            Serial.print("prevXpos from home: ");
-            Serial.println(prevXpos);
-            Serial.print("prevYpos from home: ");
-            Serial.println(prevZpos);
-            Serial.print("prevZpos from home: ");
-            Serial.println(prevZpos);
             break;
-          case 90:  //absolute pos (default) (move to pos #mm)
-            prevXpos = currentX;
-            prevYpos = currentY;
-            prevZpos = currentZ;
-            prevE = currentE;
+          case 90:  //absolute positioning (default) (move extruder to #mm position)
+            relative = 0; //off
+            prevXpos = absoluteX; //continue absolute location
+            prevYpos = absoluteY;
+            prevZpos = absoluteZ;
+            prevE = absoluteE;
             break;
-          case 91:  //relative pos (move pos + #mm)
-            currentX = prevXpos;
-            currentY = prevYpos;
-            currentZ = prevZpos;
-            currentE = prevE;
-            prevXpos = 0;
-            prevYpos = 0;
-            prevZpos = 0;
-            prevE = 0;
+          case 91:  //relative positioning (move extruder +/- #mm)
+            relative = 1; //on
+            absoluteX = prevXpos; //maintain absolute location
+            absoluteY = prevYpos;
+            absoluteZ = prevZpos;
+            absoluteE = prevE;
             break;
           case 92:  //set position
-            E = 0;  //resets extruder
+            E = 0;  //reset extruder
             prevE = E;
             break;
           default:
             break;
         }
       }
-      else if (command == 'M') {
+      else if (command == 'M') {  //parse M commands
         switch(commandNum) {
           case 82:  //absolute extrusion mode
-            E = 0;
+            E = 0;  //reset extruder
             prevE = E;
             break;
           case 84:  //disable specified steppers
-            token = strtok(gCodeCopy, " ");
+            token = strtok(gCodeCopy, " "); //separate each token (XYZE)
             if (token != NULL) {
-              token = strtok(NULL, " ");
+              token = strtok(NULL, " ");  //categorize each token
               while (token != NULL) {
                 if (token[0] == 'X') {
-                  digitalWrite(MOTOR_X_VCC, LOW);
+                  digitalWrite(MOTOR_X_VCC, LOW); //disable existing parameter
                 }
                 else if (token[0] == 'Y') {
                   digitalWrite(MOTOR_Y_VCC, LOW);
@@ -385,57 +372,59 @@ void gcode() {
                 else if (token[0] == 'E') {
                   digitalWrite(MOTOR_E_VCC, LOW);
                 }
+                else {  //if parameter empty, disable all steppers
+                  digitalWrite(MOTOR_X_VCC, LOW);
+                  digitalWrite(MOTOR_Y_VCC, LOW);
+                  digitalWrite(MOTOR_Z_VCC, LOW);
+                  digitalWrite(MOTOR_E_VCC, LOW);
+                }
                 token = strtok(NULL, " ");
               }
             }
             break;
           case 104: //set hotend temperature  //REVISIT CASE IN LOOP
-            sscanf(gCodeCopy, "%*4c S%d", &S);
-            Serial.print("gCodeCopy 104: ");
-            Serial.println(gCodeCopy);
-            if (S == 0) {
-              digitalWrite(HOTEND_CTRL, LOW); //turn off              
+            sscanf(gCodeCopy, "%*4c S%d", &S);  //get desired temperature value
+            if (S == 0) { //turn off 
+              digitalWrite(HOTEND_CTRL, LOW);              
             }
             else {
-              getExtTemp = analogRead(HOTEND_THERM_IN);
-              head_resistance = ((4095*10000)/getExtTemp)-10000;
-              Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0))));
-              head_temperature = Thead - 273.15;
+              getExtTemp = analogRead(HOTEND_THERM_IN); //read temperature adc value
+              head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+              Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+              head_temperature = Thead - 273.15;  //convert temperature K to degC
               if (head_temperature < S) { //heat up
                 digitalWrite(HOTEND_CTRL, HIGH);
               }
-              else {  //turn down
+              else {  //cool down
                 digitalWrite(HOTEND_CTRL, LOW);
               }
             }
             break;
           case 105: //report temperatures
             //M104 hotend temp report
-            getExtTemp = analogRead(HOTEND_THERM_IN);
-            head_resistance = ((4095*10000)/getExtTemp)-10000;
-            Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0))));
-            head_temperature = Thead - 273.15;
+            getExtTemp = analogRead(HOTEND_THERM_IN); //read temperature adc value
+            head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+            Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+            head_temperature = Thead - 273.15;  //convert temperature K to degC
             //M140 heated bed temp report
-            getBedTemp = analogRead(HEATED_BED_THERM_IN);
-            bed_resistance = ((4095*10000)/getBedTemp)-10000;
-            Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0))));
-            bed_temperature = Tbed - 273.15;
+            getBedTemp = analogRead(HEATED_BED_THERM_IN); //read temperature adc value
+            bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+            Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+            bed_temperature = Tbed - 273.15;  //convert temperature K to degC
             break;
           case 106: //set fan speed
-            sscanf(gCodeCopy, "%*4c S%d", &S);
-            Serial.print("gCodeCopy 106: ");
-            Serial.println(gCodeCopy);
+            sscanf(gCodeCopy, "%*4c S%d", &S);  //get desired fan power
             if (S == 0) { //turn off
               digitalWrite(FAN_CTRL_1, LOW);
               digitalWrite(FAN_CTRL_2, LOW);
-              prevFanSpeed = "OFF";
+              prevFanSpeed = "OFF"; //set for firebase_report
             }
-            else if (S < 128) {
+            else if (S < 128) { //halfway
               digitalWrite(FAN_CTRL_1, HIGH);
               digitalWrite(FAN_CTRL_2, LOW);
               prevFanSpeed = "LOW";
             }
-            else {
+            else {  //full on
               digitalWrite(FAN_CTRL_1, HIGH);
               digitalWrite(FAN_CTRL_2, HIGH);
               prevFanSpeed = "HIGH";
@@ -444,124 +433,145 @@ void gcode() {
           case 107: //fan off
             digitalWrite(FAN_CTRL_1, LOW);
             digitalWrite(FAN_CTRL_2, LOW);
-            prevFanSpeed = "OFF";
+            prevFanSpeed = "OFF"; //set for firebase_report
             break;
           case 109: //wait for hotend temperature
-            sscanf(gCodeCopy, "%*4c S%d", &S);
-            Serial.print("gCodeCopy 109: ");
-            Serial.println(gCodeCopy);
-            getExtTemp = analogRead(HOTEND_THERM_IN);
-            head_resistance = ((4095*10000)/getExtTemp)-10000;
-            Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0))));
-            head_temperature = Thead - 273.15;
-            while (head_temperature < S) {
+            sscanf(gCodeCopy, "%*4c S%d", &S);  //get desired temperature value
+            getExtTemp = analogRead(HOTEND_THERM_IN); //read temperature adc value
+            head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+            Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+            head_temperature = Thead - 273.15;  //convert temperature K to degC
+            while (head_temperature < S) {  //heat up till desired temperature reached
               digitalWrite(HOTEND_CTRL, HIGH);
-              getExtTemp = analogRead(HOTEND_THERM_IN);
-              head_resistance = ((4095*10000)/getExtTemp)-10000;
-              Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0))));
-              head_temperature = Thead - 273.15;
+              getExtTemp = analogRead(HOTEND_THERM_IN); //read temperature adc value
+              head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+              Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+              head_temperature = Thead - 273.15;  //convert temperature K to degC
+              firebase_report();  //report temperature increasing
             }
             break;
           case 140: //set bed temperature //REVISIT CASE IN LOOP
-            sscanf(gCodeCopy, "%*4c S%d", &S);
-            Serial.print("gCodeCopy 140: ");
-            Serial.println(gCodeCopy);
-            if (S == 0) {
-              digitalWrite(HEATED_BED_CTRL, LOW); //turn off              
+            sscanf(gCodeCopy, "%*4c S%d", &S);  //get desired temperature value
+            if (S == 0) { //turn off 
+              digitalWrite(HEATED_BED_CTRL, LOW);             
             }
             else {
-              getBedTemp = analogRead(HEATED_BED_THERM_IN);
-              bed_resistance = ((4095*10000)/getBedTemp)-10000;
-              Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0))));
-              bed_temperature = Tbed - 273.15;
-              if (bed_temperature < S) {
+              getBedTemp = analogRead(HEATED_BED_THERM_IN); //read temperature adc value
+              bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+              Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+              bed_temperature = Tbed - 273.15;  //convert temperature K to degC
+              if (bed_temperature < S) {  //heat up
                 digitalWrite(HEATED_BED_CTRL, HIGH);
               }
-              else {
+              else {  //cool down
                 digitalWrite(HEATED_BED_CTRL, LOW);
               }
             }
             break;
           case 190: //wait for bed temperature
-            sscanf(gCodeCopy, "%*4c S%d", &S);
-            Serial.print("gCodeCopy 190: ");
-            Serial.println(gCodeCopy);
-            getBedTemp = analogRead(HEATED_BED_THERM_IN);
-            bed_resistance = ((4095*10000)/getBedTemp)-10000;
-            Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0))));
-            bed_temperature = Tbed - 273.15;
-            while (bed_temperature < S) {
+            sscanf(gCodeCopy, "%*4c S%d", &S);  //get desired temperature value
+            getBedTemp = analogRead(HEATED_BED_THERM_IN); //read temperature adc value
+            bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+            Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+            bed_temperature = Tbed - 273.15;  //convert temperature K to degC
+            while (bed_temperature < S) { //heat up till desired temperature reached
               digitalWrite(HEATED_BED_CTRL, HIGH);
-              getBedTemp = analogRead(HEATED_BED_THERM_IN);
-              bed_resistance = ((4095*10000)/getBedTemp)-10000;
-              Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0))));
-              bed_temperature = Tbed - 273.15;
+              getBedTemp = analogRead(HEATED_BED_THERM_IN); //read temperature adc value
+              bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+              Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+              bed_temperature = Tbed - 273.15;  //convert temperature K to degC
+              firebase_report();  //report temperature increasing
             }
             break;
           default:
             break;
         }
       }
-      firebase_report();
-      firebase_check();
-      free(gCodeCopy);
-      Serial.print("free gCodeCopy (empty): ");
-      Serial.println(gCodeCopy);
-      startIndex = endIndex + 1;
-      Firebase.get(firebaseData, PRINT);
+      firebase_report();  //report information
+      firebase_check(); //check for user input changes
+      free(gCodeCopy);  //empty string
+      Firebase.get(firebaseData, PRINT);  //check if print is cancelled by user
       printing = firebaseData.stringData();
-      Serial.print("printing if cancel early: ");
-      Serial.println(reportStatus);
-      if (printing == "false") {
-        startIndex = node.length();
-        nodeNumber = nodeTotal;
-        delay(100);
+      if (printing == "false") {  //if print cancelled early
+        startIndex = node.length(); //end while loop
+        nodeNumber = nodeTotal; //end for loop
+        digitalWrite(HEATED_BED_CTRL, LOW); //turn off heating
+        digitalWrite(HOTEND_CTRL, LOW); //turn off heating
+        digitalWrite(FAN_CTRL_1, LOW);  //turn off fans
+        digitalWrite(FAN_CTRL_2, LOW);  //turn off fans
+      }
+      else {
+        startIndex = endIndex + 1;  //go to next command line
+      }
+    }
+    if (printing != "false") {  //if print still in progress, execute after every node (~100 lines)
+      getBedTemp = analogRead(HEATED_BED_THERM_IN); //maintain temp
+      bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+      Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+      bed_temperature = Tbed - 273.15;  //convert temperature K to degC
+      if (bed_temperature < S) {  //heat up
+        digitalWrite(HEATED_BED_CTRL, HIGH);
+      }
+      else {  //cool down
+        digitalWrite(HEATED_BED_CTRL, LOW);
+      }
+      getExtTemp = analogRead(HOTEND_THERM_IN); //maintain temp
+      head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+      Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+      head_temperature = Thead - 273.15;  //convert temperature K to degC
+      if (head_temperature < S) { //heat up
+        digitalWrite(HOTEND_CTRL, HIGH);
+      }
+      else {  //cool down
+        digitalWrite(HOTEND_CTRL, LOW);
       }
     }
   }
-  Firebase.get(firebaseData, PRINT);  
-  printing = firebaseData.stringData();
-  Serial.print("print from cancellation of gcode?: ");
-  Serial.println(printing);
-  if (printing != "false") {
-    reportStatus = "True"; //print complete
-    printing = "false";  
-    Serial.print("reportStatus (true): ");
-    Serial.println(reportStatus);
-  }
-  else if (printing == "false") {
-    reportStatus = "false";  //print incomplete
-    Serial.print("reportStatus (false): ");
-    Serial.println(reportStatus);
-  }
-  json.set(reportStatus);
-  Firebase.updateNode(firebaseData, STATUS, json);
+  digitalWrite(MOTOR_X_VCC, HIGH);  //turn motor back on
+  digitalWrite(MOTOR_Y_VCC, HIGH);
+  digitalWrite(MOTOR_Z_VCC, HIGH);
+  digitalWrite(MOTOR_E_VCC, HIGH);
+  digitalWrite(MOTOR_ENABLE, HIGH); //disable motors
+  reportStatus = "true";  //print complete  
+  jsonStatus.set("/print_complete", reportStatus);
+  Firebase.updateNode(firebaseData, STATUS, jsonStatus);
+  //user changes picks up where G-code last left off
+  String lastBedTemp = "0", lastExtTemp = "0", lastFanSpeed = "OFF", lastXpos = String(X), lastYpos = String(Y), lastZpos = String(Z);
+  jsonLast.set("/bed_temp", lastBedTemp);
+  jsonLast.set("/ext_temp", lastExtTemp);
+  jsonLast.set("/fan_speed", lastFanSpeed);
+  jsonLast.set("/x_pos", lastXpos);
+  jsonLast.set("/y_pos", lastYpos);
+  jsonLast.set("/z_pos", lastZpos);
+  Firebase.updateNode(firebaseData, CHECK, jsonLast);
 //end of gcode()  
 }
 
 void parse() {
   switch(commandNum) {
     case 0:   //linear move of XYZ (absolute positioning from firebase_check)
-      motorX.setSpeed(90);
+      digitalWrite(MOTOR_ENABLE, LOW);  //enable motors
+      motorX.setSpeed(90);  //set default motor speed
       motorY.setSpeed(90);
       motorZ.setSpeed(90);
-      motorX.step(moveXpos*stepsPermmXY);
+      motorX.step(moveXpos*stepsPermmXY); //execute extruder location value by steps per mm
       motorY.step(moveYpos*stepsPermmXY);
       motorZ.step(moveZpos*stepsPermmZE);
+      digitalWrite(MOTOR_ENABLE, HIGH); //disable motors
       break;
     case 104: //set hotend temperature  //REVISIT CASE IN LOOP
-      if (prevExtTemp == 0) {
+      if (prevExtTemp == 0) { //turn off
         digitalWrite(HOTEND_CTRL, LOW);
       }
       else {
-        getExtTemp = analogRead(HOTEND_THERM_IN);
-        head_resistance = ((4095*10000)/getExtTemp)-10000;
-        Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0))));
-        head_temperature = Thead - 273.15;
-        if (head_temperature < prevExtTemp) {
+        getExtTemp = analogRead(HOTEND_THERM_IN); //read temperature adc value
+        head_resistance = ((4095*10000)/getExtTemp)-10000;  //calculate thermistor resistance
+        Thead = 1/(A+(B*log(head_resistance))+(C*(pow(log(head_resistance),2.0)))+(D*(pow(log(head_resistance),3.0)))); //calculate Steinhart-Hart equation
+        head_temperature = Thead - 273.15;  //convert temperature K to degC
+        if (head_temperature < prevExtTemp) { //heat up
           digitalWrite(HOTEND_CTRL, HIGH);
         }
-        else {
+        else {  //cool down
           digitalWrite(HOTEND_CTRL, LOW);
         }
       }
@@ -582,18 +592,18 @@ void parse() {
       digitalWrite(FAN_CTRL_2, LOW);
       break;
     case 140: //set bed temperature //REVISIT CASE IN LOOP
-      if (bed_temperature == 0) {
+      if (prevBedTemp == 0) { //turn off
         digitalWrite(HEATED_BED_CTRL, LOW);
       }
       else {
-        getBedTemp = analogRead(HEATED_BED_THERM_IN);
-        bed_resistance = ((4095*10000)/getBedTemp)-10000;
-        Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0))));
-        bed_temperature = Tbed - 273.15;
-        if (bed_temperature < prevBedTemp) {
+        getBedTemp = analogRead(HEATED_BED_THERM_IN); //read temperature adc value
+        bed_resistance = ((4095*10000)/getBedTemp)-10000; //calculate thermistor resistance
+        Tbed = 1/(A+(B*log(bed_resistance))+(C*(pow(log(bed_resistance),2.0)))+(D*(pow(log(bed_resistance),3.0)))); //calculate Steinhart-Hart equation
+        bed_temperature = Tbed - 273.15;  //convert temperature K to degC
+        if (bed_temperature < prevBedTemp) {  //heat up
           digitalWrite(HEATED_BED_CTRL, HIGH);
         }
-        else {
+        else {  //cool down
           digitalWrite(HEATED_BED_CTRL, LOW);
         }
       }
@@ -601,106 +611,84 @@ void parse() {
     default:
       break;
   }
-  firebase_report();  
+  firebase_report();  //report information
 //end of parse()
 }
 
 void firebase_report() {
-  reportBedTemp = String(bed_temperature);
-  reportExtTemp = String(head_temperature);
-  reportFanSpeed = prevFanSpeed;
-  reportXpos = updateXpos;
-  reportYpos = updateYpos;
-  reportZpos = updateZpos;
+  String reportBedTemp = String(bed_temperature);
+  String reportExtTemp = String(head_temperature);
+  String reportFanSpeed = prevFanSpeed;
+  String reportXpos = updateXpos;
+  String reportYpos = updateYpos;
+  String reportZpos = updateZpos;
 
-  json.set("/bed_temp", reportBedTemp);
-  json.set("/ext_temp", reportExtTemp);
-  json.set("/fan_speed", reportFanSpeed);
-  json.set("/x_pos", reportXpos);
-  json.set("/y_pos", reportYpos);
-  json.set("/z_pos", reportZpos);
-  Firebase.updateNode(firebaseData, REPORT, json);
-  Serial.print("REPORT: ");
-  Serial.println(REPORT);
+  jsonReport.set("/bed_temp", reportBedTemp);
+  jsonReport.set("/ext_temp", reportExtTemp);
+  jsonReport.set("/fan_speed", reportFanSpeed);
+  jsonReport.set("/x_pos", reportXpos);
+  jsonReport.set("/y_pos", reportYpos);
+  jsonReport.set("/z_pos", reportZpos);
+  Firebase.updateNode(firebaseData, REPORT, jsonReport);
 //end of firebase_report()
 }
 
 void firebase_check() {
-  Firebase.get(firebaseData, PRINT);
+  Firebase.get(firebaseData, PRINT);  //check if print in progress
   printing = firebaseData.stringData();
-  Serial.print("printing: ");
-  Serial.println(printing);
-  Firebase.get(firebaseData, CHECK"/bed_temp");
-  newBedTemp = firebaseData.stringData();
-  Serial.print("newBedTemp: ");
-  Serial.println(newBedTemp);
-  newBedTempint = newBedTemp.toInt();
+  Firebase.get(firebaseData, CHECK"/bed_temp"); //get new values from user
+  String newBedTemp = firebaseData.stringData();
+  int newBedTempint = newBedTemp.toInt();
   Firebase.get(firebaseData, CHECK"/ext_temp");
-  newExtTemp = firebaseData.stringData();
-  Serial.print("newExtTemp: ");
-  Serial.println(newExtTemp);
-  newExtTempint = newExtTemp.toInt();
+  String newExtTemp = firebaseData.stringData();
+  int newExtTempint = newExtTemp.toInt();
   Firebase.get(firebaseData, CHECK"/fan_speed");
-  newFanSpeed = firebaseData.stringData();
-  Serial.print("newFanSpeed: ");
-  Serial.println(newFanSpeed);
+  String newFanSpeed = firebaseData.stringData();
 
   if (newBedTemp != NULL) {
-    updateBedTemp = newBedTemp;
     prevBedTemp = newBedTempint;
-  }
+  } //maintain previous value if unchanged
   commandNum = 140;
-  parse();
+  parse();  //execute command
 
   if (newExtTemp != NULL) {
-    updateExtTemp = newExtTemp;
     prevExtTemp = newExtTempint;
-  }
+  } //maintain previous value if unchanged
   commandNum = 104;
-  parse();
+  parse();  //execute command
 
   if (newFanSpeed != NULL) {
-    updateFanSpeed = newFanSpeed;
-    prevFanSpeed = updateFanSpeed;
-  }
+    prevFanSpeed = newFanSpeed;
+  } //maintain previous value if unchanged
     if (prevFanSpeed != "OFF") {
       commandNum = 106;
     }
     else {
       commandNum = 107;
     }
-  parse();
+  parse();  //execute command
 
-  if (printing == "false") {  //G90 absolute positioning in manual movement
-    Firebase.get(firebaseData, CHECK"/x_pos");
-    newXpos = firebaseData.stringData();
-    Serial.print("newXpos: ");
-    Serial.println(newXpos);
-    newXposfloat = newXpos.toFloat();
+  if (printing == "false") {  //absolute positioning (G90) in manual movement
+    Firebase.get(firebaseData, CHECK"/x_pos");  //get new location from user if print not in progress
+    String newXpos = firebaseData.stringData();
     Firebase.get(firebaseData, CHECK"/y_pos");
-    newYpos = firebaseData.stringData();
-    Serial.print("newYpos: ");
-    Serial.println(newYpos);
-    newYposfloat = newYpos.toFloat();
+    String newYpos = firebaseData.stringData();
     Firebase.get(firebaseData, CHECK"/z_pos");
-    newZpos = firebaseData.stringData();
-    Serial.print("newZpos: ");
-    Serial.println(newZpos);
-    newZposfloat = newZpos.toFloat();    
+    String newZpos = firebaseData.stringData();
       if (newXpos != NULL) {
         updateXpos = newXpos;
-        oldXpos = prevXpos;
-        prevXpos = newXposfloat;
-        moveXpos = prevXpos-oldXpos;
+        oldXpos = prevXpos; //remember previous location
+        prevXpos = newXpos.toFloat(); //store new location
+        moveXpos = prevXpos-oldXpos;  //calculate extruder location value
       }
-      else {
+      else {  //maintain previous coordinates if unchanged
         oldXpos = prevXpos;
-        moveXpos = prevXpos-oldXpos;
+        moveXpos = prevXpos-oldXpos;  //0 mm change
       }
       if (newYpos != NULL) {
         updateYpos = newYpos;
         oldYpos = prevYpos;
-        prevYpos = newYposfloat;
+        prevYpos = newYpos.toFloat();
         moveYpos = prevYpos-oldYpos;
       }
       else {
@@ -710,7 +698,7 @@ void firebase_check() {
       if (newZpos != NULL) {
         updateZpos = newZpos;
         oldZpos = prevZpos;
-        prevZpos = newZposfloat;
+        prevZpos = newZpos.toFloat();
         moveZpos = -1*(prevZpos-oldZpos);
       }
       else {
@@ -718,26 +706,25 @@ void firebase_check() {
         moveZpos = -1*(prevZpos-oldZpos);
       }
     commandNum = 0;
-    parse();
+    parse();  //execute command
   }
 //end of firebase_check()
 }
 
 void loop() {
-  Firebase.get(firebaseData, PRINT);
+  delay(100); //delay to not overwhelm MCU
+  Firebase.get(firebaseData, PRINT);  //check if print in progress
   printing = firebaseData.stringData();
-  Serial.print("begin?: ");
-  Serial.println(printing);
-  if (printing == "false") {
-    firebase_check();
+  if (printing == "false") {  //user controls all aspects of printer
+    firebase_check(); //check for user input changes
     commandNum = 104;
-    parse();
+    parse();  //execute command
     commandNum = 140;
-    parse();
+    parse();  //execute command
   }
-  else if (printing == "True") {
+  else {  //execute G-code file, user may not change extruder location
     gcode();
+    delay(3000);  //delay for a break after print job is complete
   }
-  delay(100);
 //end of loop()
 }
