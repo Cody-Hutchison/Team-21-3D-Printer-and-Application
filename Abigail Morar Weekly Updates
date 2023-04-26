@@ -19,6 +19,8 @@ Week of Mar 26
 Week of Apr 2
   Working on combining separate sketches into one full program. Limit switches are not outputting correctly from the board and the wrong pins for reading in ADC values for the hotend are wrong.
 Week of Apr 9
-  The MCU pins selected for reading in values for the hotend were corrected. All 3D printer components are controllable by user through app/server. Working on reading G-code from Firebase.
+  The MCU pins selected for reading in values for the hotend were corrected. All 3D printer components are controllable by user through app/server. Working on reading G-code from Firebase. Limitations with HTTP get request and MCU storage.
 Week of Apr 16
-  Limit switches on board have been fixed, MCU and electrical system integration validated. Combined all sketches into one program. MCU and app integration validated. 3D printer can send and receive all required information to app and board. G-code is being read and executed.
+  Limit switches on board have been fixed, MCU and electrical system integration validated. Combined all sketches into one program. MCU and app integration validated. 3D printer can send and receive all required information to app and board. G-code is being read and executed through nodes in Firebase.
+Week of Apr 23
+  Confirmed MCU parses all incoming data properly and correct components and nodes in Firebase are being updated as intended. User has full control over 3D printer. Controlled, G-code reading outputs intended values. Problem with printer not executing running G-code as coded. Problem unsolved.
