@@ -638,21 +638,19 @@ void firebase_check() {
   printing = firebaseData.stringData();
   Firebase.get(firebaseData, CHECK"/bed_temp"); //get new values from user
   String newBedTemp = firebaseData.stringData();
-  int newBedTempint = newBedTemp.toInt();
   Firebase.get(firebaseData, CHECK"/ext_temp");
   String newExtTemp = firebaseData.stringData();
-  int newExtTempint = newExtTemp.toInt();
   Firebase.get(firebaseData, CHECK"/fan_speed");
   String newFanSpeed = firebaseData.stringData();
 
   if (newBedTemp != NULL) {
-    prevBedTemp = newBedTempint;
+    prevBedTemp = newBedTemp.toInt();
   } //maintain previous value if unchanged
   commandNum = 140;
   parse();  //execute command
 
   if (newExtTemp != NULL) {
-    prevExtTemp = newExtTempint;
+    prevExtTemp = newExtTemp.toInt();
   } //maintain previous value if unchanged
   commandNum = 104;
   parse();  //execute command
